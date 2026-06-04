@@ -14,7 +14,7 @@
    ============================================================ */
 
 /* ── CONFIG: swap to your actual GitHub Pages domain ── */
-const DATA_BASE_URL = "https://sheerazautomate.github.io/sedp/data";
+const DATA_BASE_URL = "https://sheerazautomate.github.io/enrollment/data";
 
 const URLS = {
   baseSchools     : `${DATA_BASE_URL}/base_schools.json`,
