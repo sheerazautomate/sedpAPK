@@ -1,15 +1,38 @@
 /* ============================================================
-   INSIGHTS.JS — Data Analytics Engine & Performance Chart
-   ============================================================ */
+    INSIGHTS.JS — Data Analytics Engine & Performance Chart
+    ============================================================ */
 
 let _insightsChartInstance = null;
+let _cachedStats = null;
+let _cacheFilterState = null;
+
+/* ============================================================
+    PRIVATE: isCached(filterState)
+    Check if stats are cached for current filter
+    ============================================================ */
+function isCached(filterState) {
+  if (!_cachedStats) return false;
+  return JSON.stringify(_cacheFilterState) === JSON.stringify(filterState);
+}
 
 function renderInsights() {
   const container = document.getElementById("tab-insights");
   if (!container) return;
 
   const rows = getFilteredData();
-  const stats = calcStats(rows);
+  
+  // Get current filter state for caching
+  const filterState = JSON.stringify(APP_FILTER);
+  
+  // Use cached stats if filter hasn't changed
+  let stats;
+  if (isCached(JSON.parse(filterState))) {
+    stats = _cachedStats;
+  } else {
+    stats = calcStats(rows);
+    _cachedStats = stats;
+    _cacheFilterState = JSON.parse(filterState);
+  }
 
   container.innerHTML = `
     <div class="insights-container" style="padding: 16px;">
@@ -43,19 +66,25 @@ function renderInsights() {
     </div>
   `;
 
-  // Instantiate Chart.js context via a delayed animation tick safely
-  setTimeout(() => {
+  // Lazy-load Chart.js on next frame
+  requestAnimationFrame(() => {
     _initInsightsChart(stats);
-  }, 60);
+  });
 }
 
 function _initInsightsChart(stats) {
   const canvas = document.getElementById("insightsDonutCanvas");
   if (!canvas) return;
 
-  // Destroy previous instances to avoid memory leaks or hovering redraw glitches
+  // Destroy previous instances to avoid memory leaks
   if (_insightsChartInstance) {
     _insightsChartInstance.destroy();
+  }
+
+  // Check if Chart is available
+  if (typeof Chart === 'undefined') {
+    console.warn('[insights] Chart.js not loaded');
+    return;
   }
 
   const ctx = canvas.getContext("2d");
