@@ -1,0 +1,59 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  compile-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Checkout codebase from your repository
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # 2. Setup Node environment ecosystem (Fix 2: Cache bypassed)
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+
+    # 3. Setup official Java Development Kit (Required for modern Gradle build tools)
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+
+    # 4. Install project packages
+    - name: Install Dependencies
+      run: npm install
+
+    # 5. Compile and migrate assets into the Capacitor deployment directory
+    - name: Assemble Web Distribution Directory
+      run: npm run web:build
+
+    # 6. Initialize or update the native Android project structures
+    - name: Sync Native Capacitor Platform
+      run: |
+        if [ ! -d "android" ]; then
+          npx cap add android
+        fi
+        npx cap sync android
+
+    # 7. Grant execution privileges and run the Gradle assembler compiler toolchain
+    - name: Build Android Debug APK
+      run: |
+        cd android
+        chmod +x gradlew
+        ./gradlew assembleDebug
+
+    # 8. Extract the compiled binary and push it straight to GitHub Actions artifacts interface
+    - name: Upload Compiled APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: sedp-enrollment-debug-apk
+        path: android/app/build/outputs/apk/debug/app-debug.apk
+        retention-days: 7
