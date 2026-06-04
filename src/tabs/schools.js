@@ -1,15 +1,45 @@
 /* ============================================================
-   SCHOOLS.JS — Schools List Management & Quick Search
-   ============================================================ */
+    SCHOOLS.JS — Schools List Management & Quick Search
+    ============================================================ */
 
 let _currentSchoolFilter = "all_schools";
 let _currentSchoolSort = "ach";
 let _searchQuery = "";
+let _searchTimeout = null;
+let _cachedFilteredData = null;
+let _cacheKey = null;
+
+/* ============================================================
+    PRIVATE: generateCacheKey()
+    Creates a cache key based on current filter + sort state
+    ============================================================ */
+function generateCacheKey() {
+  return `${_currentSchoolFilter}|${_currentSchoolSort}|${_searchQuery}`;
+}
+
+/* ============================================================
+    PRIVATE: isCacheValid()
+    Checks if cached data is still valid for current state
+    ============================================================ */
+function isCacheValid() {
+  const key = generateCacheKey();
+  return _cacheKey === key && _cachedFilteredData !== null;
+}
 
 function renderSchools() {
   const host = document.getElementById("schools-scroll-host");
   const countBadge = document.getElementById("schools-count-badge");
   if (!host) return;
+
+  const cacheKey = generateCacheKey();
+  
+  // Check if we have valid cached results
+  if (isCacheValid()) {
+    // Update count
+    if (countBadge) countBadge.textContent = formatNumber(_cachedFilteredData.length);
+    renderSchoolsHtml(_cachedFilteredData);
+    return;
+  }
 
   let rows = getFilteredData();
 
@@ -35,7 +65,7 @@ function renderSchools() {
     if (_currentSchoolSort === "ach") {
       const achA = a[8] ? (a[7] / a[8]) : 0;
       const achB = b[8] ? (b[7] / b[8]) : 0;
-      return achA - achB; // Ascending order to highlight lagging units first
+      return achA - achB;
     } else if (_currentSchoolSort === "ntAch") {
       const ntAchA = a[10] ? ((a[7] - a[6]) / a[10]) : 0;
       const ntAchB = b[10] ? ((b[7] - b[6]) / b[10]) : 0;
@@ -48,15 +78,30 @@ function renderSchools() {
     return 0;
   });
 
+  // Cache the results
+  _cacheKey = cacheKey;
+  _cachedFilteredData = rows;
+
   // Update localized UI badges
   if (countBadge) countBadge.textContent = formatNumber(rows.length);
+
+  renderSchoolsHtml(rows);
+}
+
+/* ============================================================
+    PRIVATE: renderSchoolsHtml(rows)
+    Renders the HTML for school list
+    ============================================================ */
+function renderSchoolsHtml(rows) {
+  const host = document.getElementById("schools-scroll-host");
+  if (!host) return;
 
   if (rows.length === 0) {
     host.innerHTML = `<div class="empty-state-msg">No matching schools found within scope.</div>`;
     return;
   }
 
-  // Render list template using a high-performance map string injection
+  // Render list template using optimized map
   host.innerHTML = `
     <div class="virtual-scroll-container">
       ${rows.map(r => {
@@ -105,15 +150,17 @@ function renderSchools() {
 
 function applySchoolFilter(value) {
   _currentSchoolFilter = value;
+  _cachedFilteredData = null; // Invalidate cache
   renderSchools();
 }
 
 function applySchoolSort(value) {
   _currentSchoolSort = value;
+  _cachedFilteredData = null; // Invalidate cache
   renderSchools();
 }
 
-/* ── SEARCH BAR EVENT ENGINE ── */
+/* ── SEARCH BAR EVENT ENGINE WITH DEBOUNCING ── */
 
 function toggleSearch() {
   const wrap = document.getElementById("search-bar-wrap");
@@ -130,10 +177,18 @@ function closeSearch() {
   if (wrap) wrap.classList.remove("open");
   if (input) input.value = "";
   _searchQuery = "";
+  _cachedFilteredData = null;
+  clearTimeout(_searchTimeout);
   renderSchools();
 }
 
 function onSearchInput(value) {
   _searchQuery = value;
-  renderSchools();
+  
+  // Debounce search rendering by 300ms to prevent excessive re-renders
+  clearTimeout(_searchTimeout);
+  _searchTimeout = setTimeout(() => {
+    _cachedFilteredData = null; // Invalidate cache
+    renderSchools();
+  }, 300);
 }
