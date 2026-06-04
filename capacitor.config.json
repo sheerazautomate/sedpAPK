@@ -1,0 +1,6 @@
+{
+  "appId": "pk.gov.punjab.sedp.enrollment",
+  "appName": "SEDP Enrollment",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
