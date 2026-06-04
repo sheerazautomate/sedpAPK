@@ -1,20 +1,20 @@
 /* ============================================================
-   FETCH-DATA.JS — App Data Layer
-   Fetches base_schools.json + live_enrollment.json +
-   yesterday_enrollment.json from GitHub Pages and assembles
-   MASTER_DATA (the 11-index array every tab reads from).
+    FETCH-DATA.JS — App Data Layer
+    Fetches base_schools.json + live_enrollment.json +
+    yesterday_enrollment.json from GitHub raw content and assembles
+    MASTER_DATA (the 11-index array every tab reads from).
 
-   Exposes globals:
-     MASTER_DATA        — full 11-index array, all schools
-     APP_HIERARCHY      — { district: { wing: { tehsil: [markaz] } } }
-     APP_FILTER         — current active filter { district, wing, tehsil, markaz }
-     APP_SYNC_TIME      — ISO string of when data was last fetched
-     getFilteredData()  — returns MASTER_DATA sliced by APP_FILTER
-     initData()         — called once on boot, returns Promise
-   ============================================================ */
+    Exposes globals:
+      MASTER_DATA        — full 11-index array, all schools
+      APP_HIERARCHY      — { district: { wing: { tehsil: [markaz] } } }
+      APP_FILTER         — current active filter { district, wing, tehsil, markaz }
+      APP_SYNC_TIME      — ISO string of when data was last fetched
+      getFilteredData()  — returns MASTER_DATA sliced by APP_FILTER
+      initData()         — called once on boot, returns Promise
+    ============================================================ */
 
-/* ── CONFIG: swap to your actual GitHub Pages domain ── */
-const DATA_BASE_URL = "https://sheerazautomate.github.io/enrollment/data";
+/* ── CONFIG: Use GitHub raw content for data files ── */
+const DATA_BASE_URL = "https://raw.githubusercontent.com/sheerazautomate/sedpAPK/main/data";
 
 const URLS = {
   baseSchools     : `${DATA_BASE_URL}/base_schools.json`,
@@ -23,8 +23,8 @@ const URLS = {
 };
 
 /* ============================================================
-   GLOBAL STATE — written once by initData(), read everywhere
-   ============================================================ */
+    GLOBAL STATE — written once by initData(), read everywhere
+    ============================================================ */
 let MASTER_DATA   = [];
 let APP_HIERARCHY = {};
 let APP_SYNC_TIME = null;
@@ -38,10 +38,10 @@ let APP_FILTER = {
 };
 
 /* ============================================================
-   PUBLIC: getFilteredData()
-   Returns the subset of MASTER_DATA matching APP_FILTER.
-   Every tab calls this — never filters MASTER_DATA directly.
-   ============================================================ */
+    PUBLIC: getFilteredData()
+    Returns the subset of MASTER_DATA matching APP_FILTER.
+    Every tab calls this — never filters MASTER_DATA directly.
+    ============================================================ */
 function getFilteredData() {
   const { district, wing, tehsil, markaz } = APP_FILTER;
   return MASTER_DATA.filter(r =>
@@ -53,18 +53,18 @@ function getFilteredData() {
 }
 
 /* ============================================================
-   PUBLIC: getScopeLabel()
-   Human-readable string of the active filter scope.
-   ============================================================ */
+    PUBLIC: getScopeLabel()
+    Human-readable string of the active filter scope.
+    ============================================================ */
 function getScopeLabel() {
   const { district, wing, tehsil, markaz } = APP_FILTER;
   return markaz || tehsil || wing || district || "All Punjab";
 }
 
 /* ============================================================
-   PUBLIC: getScopeBreadcrumb()
-   Array of label strings from broad to narrow.
-   ============================================================ */
+    PUBLIC: getScopeBreadcrumb()
+    Array of label strings from broad to narrow.
+    ============================================================ */
 function getScopeBreadcrumb() {
   const { district, wing, tehsil, markaz } = APP_FILTER;
   const parts = ["Punjab"];
@@ -76,9 +76,9 @@ function getScopeBreadcrumb() {
 }
 
 /* ============================================================
-   PUBLIC: getScopeLevel()
-   0=Punjab-wide, 1=district, 2=wing, 3=tehsil, 4=markaz
-   ============================================================ */
+    PUBLIC: getScopeLevel()
+    0=Punjab-wide, 1=district, 2=wing, 3=tehsil, 4=markaz
+    ============================================================ */
 function getScopeLevel() {
   const { district, wing, tehsil, markaz } = APP_FILTER;
   if (markaz)   return 4;
@@ -89,9 +89,9 @@ function getScopeLevel() {
 }
 
 /* ============================================================
-   PUBLIC: getAchColor(pct) / getAchClass(pct)
-   Returns CSS color string or class name for an ach percentage.
-   ============================================================ */
+    PUBLIC: getAchColor(pct) / getAchClass(pct)
+    Returns CSS color string or class name for an ach percentage.
+    ============================================================ */
 function getAchColor(pct) {
   if (pct < 80) return "var(--red)";
   if (pct < 90) return "var(--amber)";
@@ -105,9 +105,9 @@ function getAchClass(pct) {
 }
 
 /* ============================================================
-   PUBLIC: calcStats(rows)
-   Aggregates an array of MASTER_DATA rows into summary numbers.
-   ============================================================ */
+    PUBLIC: calcStats(rows)
+    Aggregates an array of MASTER_DATA rows into summary numbers.
+    ============================================================ */
 function calcStats(rows) {
   const stats = {
     cur: 0, bas: 0, tar: 0, prev: 0, nt: 0,
@@ -141,10 +141,10 @@ function calcStats(rows) {
 }
 
 /* ============================================================
-   PUBLIC: aggregateBy(rows, colIndex)
-   Groups rows by column index, returns sorted summary array.
-   colIndex: 0=district, 1=tehsil, 2=markaz, 3=wing
-   ============================================================ */
+    PUBLIC: aggregateBy(rows, colIndex)
+    Groups rows by column index, returns sorted summary array.
+    colIndex: 0=district, 1=tehsil, 2=markaz, 3=wing
+    ============================================================ */
 function aggregateBy(rows, colIndex) {
   const groups = {};
 
@@ -173,17 +173,17 @@ function aggregateBy(rows, colIndex) {
 }
 
 /* ============================================================
-   PUBLIC: formatNumber(n)
-   Locale-aware number formatting.
-   ============================================================ */
+    PUBLIC: formatNumber(n)
+    Locale-aware number formatting.
+    ============================================================ */
 function formatNumber(n) {
   return Number(n).toLocaleString("en-PK");
 }
 
 /* ============================================================
-   PRIVATE: buildHierarchy(data)
-   Builds nested district > wing > tehsil > [markaz] object.
-   ============================================================ */
+    PRIVATE: buildHierarchy(data)
+    Builds nested district > wing > tehsil > [markaz] object.
+    ============================================================ */
 function buildHierarchy(data) {
   const h = {};
   data.forEach(r => {
@@ -203,9 +203,9 @@ function buildHierarchy(data) {
 }
 
 /* ============================================================
-   PRIVATE: safeFetch(url)
-   Fetches a URL, returns parsed JSON or null on any failure.
-   ============================================================ */
+    PRIVATE: safeFetch(url)
+    Fetches a URL, returns parsed JSON or null on any failure.
+    ============================================================ */
 async function safeFetch(url) {
   try {
     const res = await fetch(url, { cache: "no-store" });
@@ -221,8 +221,8 @@ async function safeFetch(url) {
 }
 
 /* ============================================================
-   PRIVATE: setLoaderText(main, sub)
-   ============================================================ */
+    PRIVATE: setLoaderText(main, sub)
+    ============================================================ */
 function setLoaderText(main, sub) {
   const mainEl = document.getElementById("loader-text");
   const subEl  = document.getElementById("loader-sub");
@@ -231,10 +231,10 @@ function setLoaderText(main, sub) {
 }
 
 /* ============================================================
-   PUBLIC: initData()
-   Boot function. Fetches all three files, assembles MASTER_DATA.
-   Returns Promise<boolean>.
-   ============================================================ */
+    PUBLIC: initData()
+    Boot function. Fetches all three files, assembles MASTER_DATA.
+    Returns Promise<boolean>.
+    ============================================================ */
 async function initData() {
   try {
     setLoaderText("Loading base school profiles...", URLS.baseSchools);
