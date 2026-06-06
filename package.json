@@ -1,0 +1,15 @@
+{
+  "name": "sedp-mobile-app",
+  "version": "1.0.0",
+  "description": "Punjab School Enrollment Monitoring Dashboard",
+  "main": "www/index.html",
+  "scripts": {
+    "web:build": "rm -rf www && mkdir -p www && (cp styles.css www/ || cp src/styles.css www/ || true) && cp src/fetch-data.js www/ && (cp -r components www/ || cp -r src/components www/ || cp -r Components www/ || cp -r src/Components www/) && (cp -r tabs www/ || cp -r src/tabs www/ || cp -r Tabs www/ || cp -r src/Tabs www/) && sed 's|\\.\\./||g' src/index.html > www/index.html",
+    "cap:sync": "npm run web:build && npx cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/core": "^6.0.0"
+  }
+}
